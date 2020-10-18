@@ -1,0 +1,160 @@
+server:
+  port: 8010
+
+spring:
+
+  ## Kafka配置
+  kafka:
+    bootstrap-servers: 106.14.212.97:9093,47.102.205.109:9093,101.132.108.157:9093
+    ## KafkaKafka
+    ssl:
+      truststore-location: file:/Users/wangshichang/WorkSpace/Projects/boot-kafka/kafka.client.truststore.jks
+      truststore-password: KafkaOnsClient
+
+    properties:
+      security.protocol: SASL_SSL
+      ssl.endpoint.identification.algorithm: ""
+    ## Producer配置
+    producer:
+
+
+
+      ## 此配置控制 写入失败时的重试次数，默认值为0
+      ## 当leader节点失效，一个repli节点会替代成为leader节点，此时可能出现写入失败，retirs重发，此时repli节点完全成为leader节点，不会产生record的丢失
+      retries: 0
+
+      ## 此配置控制 Kafka应答级别
+      ## procedure要求leader在考虑完成请求之前收到的确认数，用于控制发送record在Kafka的持久化
+      ## 其值可以为如下：
+      ##   0：   如果设置为零，则生产者将不会等待来自Kafka的任何确认，该record将立即添加到套接字缓冲区并视为已发送。在这种情况下，无法保证Kafka已收到record，并且重试配置将不会生效（因为客户端通常不会知道任何故障），为每条record返回的offset始终设置为-1
+      ##   1：   这意味着leader会将record写入其本地日志，但无需等待所有副本Kafka的完全确认即可做出回应，在这种情况下，如果leader在确认record后立即失败，但在将record复制到所有的副本Kafka之前，则record将会丢失
+      ##   all： 这意味着leader将等待完整的同步副本集以确认record，这保证了只要至少一个同步副本Kafka仍然存活，record就不会丢失，这是最强有力的保证，这相当于acks = -1的设置
+      acks: 1
+
+      #      ## 此配置控制 批量大小（以字节为单位），默认值为16384（16KB）
+      #      ## 当多个record被发送到同一分区时，尝试将record一起批量提交给Kafka
+      #      batch-size: 16384
+      #      ## 此配置控制 批处理缓冲区（以字节为单位），默认值为33554432（32M）
+      #      ## 生产者可用于缓冲等待发送到Kafka的record
+      #      buffer-memory: 33554432
+
+      ## 此配置控制 生成的record的压缩类型，默认值为producer
+      ## 其值可以为如下：
+      ##    gzip：   gzip压缩
+      ##    snappy： snappy压缩
+      ##    lz4：    lz4压缩
+      ##    none：   没有压缩
+      #      compression-type: gzip
+
+      #      properties:
+      #        ## 此配置控制 record提交延时（以毫秒为单位）
+      #        ## 当生产的record达到batch-size或到达延时后,生产者就会将record提交给Kafka
+      #        ## linger.ms为0表示每接收到一条record就提交给Kafka,这时候batch-size其实就没用了
+      #        linger:
+      #          ms: 0
+
+
+      ## key的Serializer类，必须实现接口org.apache.kafka.common.serialization.Serializer
+      #      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      ## value的Serializer类，必须实现接口org.apache.kafka.common.serialization.Serializer
+    #      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+    ## Consumer配置
+#    consumer:
+#      ## 此配置控制 是否自动提交Consumer的offset，默认值为true
+#      ## 如果为true，则Consumer的offset将在后台定期提交
+#      ## 如果为false，则需要手动调用Acknowledgment.acknowledge()进行offset的提交
+#      ## 1. 如果在消费Kafka的record过程中，一直没有提交offset，那么在此程序运行的过程中它不会重复消费。但是如果重启之后，就会重复消费之前没有提交offset的record
+#      ## 2. 如果在消费的过程中有几条或者一批record没有提交offset，后面其他的record消费后正常提交offset，那么Kafka会更新为消费后最新的offset，不会重新消费，就算重启程序也不会重新消费
+#      ## 3. Consumer如果没有提交offset，程序不会阻塞或者重复消费，除非在消费到这个你不想提交offset的record时你尝试重新初始化一个客户端Consumer，即可再次消费这个未提交offset的record。
+#      ##    因为客户端也记录了当前Consumer的offset信息，所以程序会在每次消费了record之后，自己记录offset，而手动提交到Kafka的offset与这个并没有关系，所以程序会继续往下消费。
+#      ##    在你重新初始化客户端Consumer之后，会从Kafka得到最新的offset信息记录到本地。所以说如果当前的消费的record没有提交offset，此时在你重新初始化Consumer之后，可得到这条未提交record的offset,从此位置开始消费
+#      enable-auto-commit: false
+#      ## 当Kafka Broker发现kafka在没有初始offset或者当前的offset是一个不存在的值（如果一个record被删除，就肯定不存在了）时的策略，默认值为latest
+#      ## 其值可以为如下：
+#      ##    earliest： 重置为分区中最小的offset
+#      ##    latest：   重置为分区中最新的offset(消费分区中新产生的record)
+#      ##    none：     只要有一个分区不存在已提交的offset,就抛出异常
+#      auto-offset-reset: latest
+#      ## 此配置控制 自动提交Consumer的offset给Kafka的频率（以毫秒为单位），默认值为5000
+#      ## 如果 "enable.auto.commit" 为true，则Consumer的offset自动提交给Kafka
+#      auto-commit-interval: 5000
+#
+#      ## 此配置控制 一次poll()获取records的最大数量，默认值为500
+#      ## Consumer读取partition中的数据是通过调用发起一个fetch请求来执行的。而从KafkaConsumer来看，它有一个poll方法，但是这个poll方法只是可能会发起fetch请求。
+#      ##    原因是：Consumer每次发起fetch请求时，读取到的数据是有限制的，通过配置项 "max.partition.fetch.bytes" 来限制的。而在执行poll方法时，会根据配置项个"max.poll.records"来限制一次最多pool多少个record。
+#      ##    那么就可能出现这样的情况： 在满足max.partition.fetch.bytes限制的情况下，假如fetch到了100个record，放到本地缓存后，由于 "max.poll.records" 限制每次只能poll出15个record。
+#      ##    那么KafkaConsumer就需要执行7次才能将这一次通过网络发起的fetch请求所fetch到的这100个record消费完毕。其中前6次是每次pool中15个record，最后一次是poll出10个record。
+#      ##    在Consumer中，还有另外一个配置项："max.poll.interval.ms" ，它表示最大的poll数据间隔，如果超过这个间隔没有发起pool请求，但heartbeat仍旧在发，就认为该Consumer处于 livelock状态。
+#      ##    就会将该Consumer退出Consumer group。所以为了不使Consumer 自己被退出，Consumer 应该不停的发起poll(timeout)操作。而这个动作 KafkaConsumer Client是不会帮我们做的，这就需要自己在程序中不停的调用poll方法了
+#      max-poll-records: 500
+#
+#      ## 此配置控制 请求的最小数据量（以字节为单位），默认值为1
+#      ## Consumer向一个broker发起fetch请求时，broker返回的records的最小值。如果broker中数据量不够的话会wait，直到数据大小满足这个条件（以字节为单位），默认值为1
+#      ## 对应的Kafka的参数为 "fetch.min.bytes"
+#      fetch-min-size: 1
+#      ## 此配置控制 fetch请求发给broker后阻塞的最长时间（以毫秒为单位），默认值为500
+#      ## 数据量未满足“fetch.min.bytes”给出的要求，该请求在broker中会被阻塞
+#      ## 对应的Kafka的参数为 "fetch.max.wait.ms"
+#      fetch-max-wait: 500
+#
+#      ## 此配置控制 Consumer与Coordinator之间的心跳预期时间（以毫秒为单位），默认值为3000（3s）
+#      ## 心跳是确定Consumer存活，加入或者退出group的有效手段。这个值必须设置的小于session.timeout.ms，因为：
+#      ##    当Consumer由于某种原因不能发Heartbeat到coordinator时，并且时间超过session.timeout.ms时，就会认为该consumer已退出，它所订阅的partition会分配到同一group 内的其它的consumer上。
+#      ##    通常设置的值要低于session.timeout.ms的1/3。
+#      heartbeat-interval: 3000
+#
+#      ## key的Serializer类，必须实现接口org.apache.kafka.common.serialization.Serializer
+#      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+#      ## value的Serializer类，必须实现接口org.apache.kafka.common.serialization.Serializer
+#      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+#
+#      properties:
+#        ## 此配置控制 调用poll（）之间的最大延迟（以毫秒为单位）
+#        ## 这对Consumer在获取更多record之前可以空闲的时间量设置了一个上限。如果在此超时过期之前未调用poll（），则认为Consumer失败，组将重新平衡，以便将分区重新分配给另一个成员。
+#        ## 对于设置了"group.instance.id"的Consumer如果达到此超时，则不会立即重新分配分区。相反，Consumer将停止发送心跳信号，分区将在“过期后”重新分配会话"session.timeout.ms"
+#        max:
+#          poll:
+#            interval:
+#              ms: 6000
+#        ### 此配置控制 一次fetch请求，从一个broker中取得的最大数据量（以字节为单位），默认为52428800（5MB）
+#        fetch:
+#          max:
+#            bytes: 52428800
+#        ## 此配置控制 Consumer session 过期时间（以毫秒为单位），默认为10000
+#        ## 这个值必须设置在broker configuration中的group.min.session.timeout.ms 与 group.max.session.timeout.ms之间。
+#        session:
+#          timeout:
+#            ms: 10000
+#
+#      group-id: "test-kafka-group1"
+#
+#    ## Listener配置
+#    listener:
+#      ## 此配置控制 listener的AckMode
+#      ## 当"enable.auto.commit"设置为false时，该值会生效；为true时不会生效
+#      ## 其值可以为如下：
+#      ##    RECORD：           当每一条record被Consumer监听器（ListenerConsumer）处理之后提交
+#      ##    BATCH：            当每一批poll()的record被Consumer监听器（ListenerConsumer）处理之后提交
+#      ##    TIME：             当每一批poll()的record被Consumer监听器（ListenerConsumer）处理之后，距离上次提交时间大于TIME时提交
+#      ##    COUNT：            当每一批poll()的record被Consumer监听器（ListenerConsumer）处理之后，被处理record数量大于等于COUNT时提交
+#      ##    COUNT_TIME：       TIME |　COUNT　有一个条件满足时提交
+#      ##    MANUAL：           当每一批poll()的record被Consumer监听器（ListenerConsumer）处理之后, 手动调用Acknowledgment.acknowledge()后提交（和BATCH是一样的）
+#      ##    MANUAL_IMMEDIATE： 手动调用Acknowledgment.acknowledge()后立即提交
+#      ack-mode: MANUAL
+#      ## 此配置控制 offset提交之间的record数，默认为1
+#      ## 当 ackMode 为“COUNT”或“COUNT_TIME”时生效
+#      ack-count: 1
+#      ## 此配置控制 offset提交之间的时间间隔（以毫秒为单位），默认为5000
+#      ## 当 ackMode 为“TIME”或“COUNT_TIME”时生效
+#      ack-time: 5000
+#
+#      ## 此配置控制 在侦听器容器中运行的线程数，默认为1
+#      concurrency: 3
+#
+#      ## 此配置控制 如果Topic中没有record时，等待timeout毫秒后，调用poll()方法（以毫秒为单位），默认为5000
+#      poll-timeout: 5000
+#      ## 批量消费
+#      type: batch
+
+
